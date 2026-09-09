@@ -1,0 +1,306 @@
+---
+import ThemeToggle from './ThemeToggle.astro';
+
+const pathname = Astro.url.pathname;
+
+// Helper function untuk mengecek apakah menu sedang aktif
+const isActive = (path: string) => {
+  if (path === '/') {
+    return pathname === '/';
+  }
+  return pathname.startsWith(path);
+};
+
+// Styling untuk status Aktif vs Non-Aktif
+const activeStyle = "bg-relyon-blue/10 text-relyon-blue dark:bg-relyon-sky/10 dark:text-relyon-sky font-bold";
+const inactiveStyle = "text-slate-600 dark:text-slate-300 hover:text-relyon-blue dark:hover:text-relyon-sky font-medium";
+
+const serviceColumns = [
+  {
+    title: 'Website',
+    items: [
+      ['▥', 'Website Company Profile', 'Website profesional untuk bisnis dan instansi'],
+      ['✦', 'Landing Page', 'Halaman promosi fokus konversi dan campaign'],
+      ['◫', 'Website Toko Online', 'Katalog, checkout, dan manajemen pesanan'],
+      ['◇', 'Website Sekolah', 'Situs sekolah, kampus, dan lembaga pendidikan']
+    ]
+  },
+  {
+    title: 'Instansi & Organisasi',
+    items: [
+      ['⌁', 'Website Travel', 'Travel, tour, tiket, dan paket wisata'],
+      ['♡', 'Website Klinik', 'Klinik, praktik dokter, dan fasilitas kesehatan'],
+      ['▦', 'Website Booking', 'Reservasi dan booking online otomatis']
+    ]
+  },
+  {
+    title: 'Sistem & Aplikasi',
+    items: [
+      ['▤', 'Website Hotel', 'Hotel, villa, guest house, dan penginapan'],
+      ['⌂', 'Website Properti', 'Listing properti dan real estate'],
+      ['▦', 'Dashboard Admin', 'Panel admin dan manajemen data internal'],
+      ['◇', 'Sistem Inventory', 'Manajemen stok, gudang, dan keluar-masuk barang'],
+      ['♧', 'CRM & ERP', 'Manajemen pelanggan dan operasional bisnis']
+    ]
+  }
+];
+---
+
+<header class="sticky top-0 z-40 w-full bg-white/80 dark:bg-relyon-darkbg/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 transition-colors duration-300">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+    
+    <!-- Logo Brand Relyon -->
+    <a href="/" class="flex items-center gap-3 group">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-relyon-blue to-relyon-sky flex items-center justify-center text-white font-bold text-xl shadow-md shadow-relyon-blue/20 group-hover:scale-105 transition-transform">
+        R
+      </div>
+      <div class="flex flex-col">
+        <span class="font-bold text-xl tracking-tight text-relyon-dark dark:text-white leading-none">
+          Relyon
+        </span>
+        <span class="text-[10px] font-semibold tracking-widest text-relyon-blue uppercase">
+          Creative
+        </span>
+      </div>
+    </a>
+
+    <!-- Navigasi Utama (Desktop) -->
+    <nav class="hidden md:flex items-center gap-2 text-sm">
+      <a 
+        href="/" 
+        class={`px-4 py-2 rounded-xl transition-colors ${isActive('/') ? activeStyle : inactiveStyle}`}
+      >
+        Beranda
+      </a>
+      <a 
+        href="/katalog" 
+        class={`px-4 py-2 rounded-xl transition-colors ${isActive('/katalog') ? activeStyle : inactiveStyle}`}
+      >
+        Katalog
+      </a>
+      <div id="services-menu" class="group relative flex items-center rounded-xl transition-colors hover:bg-relyon-blue/10 dark:hover:bg-relyon-sky/10">
+        <a href="/#features" class={`py-2 pl-4 pr-1 transition-colors ${inactiveStyle}`}>
+          Layanan
+        </a>
+        <button id="services-menu-btn" type="button" class="grid h-9 w-8 place-items-center text-slate-500 transition-colors group-hover:text-relyon-blue dark:text-slate-300 dark:group-hover:text-relyon-sky" aria-label="Buka daftar layanan" aria-expanded="false" aria-controls="services-mega-menu">
+          <svg id="services-chevron" class="h-4 w-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m6 9 6 6 6-6" /></svg>
+        </button>
+
+        <div id="services-mega-menu" class="services-mega-menu invisible pointer-events-none absolute left-1/2 top-[calc(100%+1rem)] w-[min(1120px,calc(100vw-2rem))] -translate-x-1/2 translate-y-2 opacity-0" aria-hidden="true">
+          <div class="grid grid-cols-3 gap-8 rounded-3xl border border-slate-200 bg-white p-7 shadow-2xl shadow-slate-900/15 dark:border-slate-700 dark:bg-relyon-darkcard">
+            {serviceColumns.map((column) => (
+              <div>
+                <p class="mb-4 text-xs font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">{column.title}</p>
+                <div class="space-y-2">
+                  {column.items.map(([icon, title, description]) => (
+                    <div aria-disabled="true" class="flex cursor-not-allowed gap-3 rounded-2xl p-3 opacity-75">
+                      <span class="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-relyon-blue/10 text-lg font-bold text-relyon-blue dark:bg-relyon-sky/10 dark:text-relyon-sky">{icon}</span>
+                      <span>
+                        <span class="flex items-center gap-2 text-sm font-semibold text-relyon-dark dark:text-white">{title}<span class="rounded-full bg-slate-100 px-2 py-0.5 text-[8px] font-bold uppercase tracking-wide text-slate-400 dark:bg-slate-800">v2.0</span></span>
+                        <span class="mt-1 block text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">{description}</span>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+            <div class="col-span-3 flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 dark:border-slate-700 dark:bg-slate-900/40" aria-disabled="true">
+              <div><strong class="text-sm text-relyon-blue dark:text-relyon-sky">Konsultasi Gratis</strong><p class="mt-1 text-[10px] text-slate-400">Akan tersedia bersama layanan website di versi 2.0</p></div>
+              <span class="rounded-full bg-relyon-yellow/20 px-3 py-1.5 text-[10px] font-bold text-amber-700 dark:text-relyon-yellow">Segera hadir</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <a 
+        href="/#faq" 
+        class={`px-4 py-2 rounded-xl transition-colors ${isActive('#faq') ? activeStyle : inactiveStyle}`}
+      >
+        FAQ
+      </a>
+    </nav>
+
+    <!-- Action Right: Dark Mode Toggle & Cart Button -->
+    <div class="flex items-center gap-3">
+      <ThemeToggle />
+
+      <!-- Cart Button (Melayang/Trigger Panel) -->
+      <button 
+        id="open-cart-btn"
+        type="button"
+        class="relative flex items-center gap-2 bg-relyon-blue hover:bg-relyon-dark text-white px-4 py-2.5 rounded-xl text-sm font-semibold shadow-md shadow-relyon-blue/20 transition-all active:scale-95 cursor-pointer"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+        </svg>
+        <span class="hidden sm:inline">Keranjang</span>
+        <!-- Counter Badge Dynamic -->
+        <span id="cart-badge" class="bg-relyon-yellow text-relyon-dark text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+          0
+        </span>
+      </button>
+
+      <button
+        id="mobile-menu-btn"
+        type="button"
+        class="grid h-11 w-11 place-items-center rounded-xl border border-slate-200 bg-white text-relyon-dark transition-colors hover:border-relyon-sky hover:text-relyon-blue md:hidden dark:border-slate-700 dark:bg-relyon-darkcard dark:text-white"
+        aria-label="Buka menu navigasi"
+        aria-controls="mobile-menu"
+        aria-expanded="false"
+      >
+        <svg id="mobile-menu-open-icon" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+        <svg id="mobile-menu-close-icon" class="hidden h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18 18 6M6 6l12 12" /></svg>
+      </button>
+    </div>
+
+  </div>
+
+  <nav id="mobile-menu" class="hidden max-h-[calc(100dvh-5rem)] overflow-y-auto border-t border-slate-100 bg-white px-4 py-3 shadow-lg md:hidden dark:border-slate-800 dark:bg-relyon-darkbg" aria-label="Navigasi mobile">
+    <div class="mx-auto grid max-w-7xl gap-1">
+      <a href="/" class="rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-relyon-ice hover:text-relyon-blue dark:text-slate-200 dark:hover:bg-relyon-darkcard">Beranda</a>
+      <a href="/katalog" class="rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-relyon-ice hover:text-relyon-blue dark:text-slate-200 dark:hover:bg-relyon-darkcard">Katalog</a>
+      <div>
+        <div class="grid grid-cols-[1fr_auto] gap-1">
+          <a href="/#features" class="rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-relyon-ice hover:text-relyon-blue dark:text-slate-200 dark:hover:bg-relyon-darkcard">Layanan</a>
+          <button id="mobile-services-btn" type="button" class="grid w-12 place-items-center rounded-xl bg-slate-50 text-slate-500 dark:bg-relyon-darkcard dark:text-slate-300" aria-expanded="false" aria-controls="mobile-services-panel" aria-label="Buka daftar layanan">
+            <svg id="mobile-services-chevron" class="h-4 w-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m6 9 6 6 6-6" /></svg>
+          </button>
+        </div>
+        <div id="mobile-services-panel" class="mt-2 hidden rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-900/40">
+          {serviceColumns.map((column) => (
+            <div class="mb-4 last:mb-0">
+              <p class="mb-2 px-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">{column.title}</p>
+              <div class="grid gap-1">
+                {column.items.map(([icon, title]) => (
+                  <div aria-disabled="true" class="flex cursor-not-allowed items-center gap-3 rounded-xl px-2 py-2 opacity-60">
+                    <span class="grid h-8 w-8 place-items-center rounded-lg bg-relyon-blue/10 text-xs text-relyon-blue dark:text-relyon-sky">{icon}</span>
+                    <span class="text-xs font-semibold text-slate-600 dark:text-slate-300">{title}</span>
+                    <span class="ml-auto text-[8px] font-bold uppercase text-slate-400">v2.0</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <a href="/#faq" class="rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-relyon-ice hover:text-relyon-blue dark:text-slate-200 dark:hover:bg-relyon-darkcard">FAQ</a>
+    </div>
+  </nav>
+</header>
+
+<script>
+  import { getCart, type CartItem } from '../lib/cartStore';
+
+  const badgeEl = document.getElementById('cart-badge');
+  const cartBtn = document.getElementById('open-cart-btn');
+  const mobileMenuButton = document.getElementById('mobile-menu-btn');
+  const mobileMenu = document.getElementById('mobile-menu');
+  const mobileOpenIcon = document.getElementById('mobile-menu-open-icon');
+  const mobileCloseIcon = document.getElementById('mobile-menu-close-icon');
+  const servicesMenu = document.getElementById('services-menu');
+  const servicesMenuButton = document.getElementById('services-menu-btn');
+  const servicesMegaMenu = document.getElementById('services-mega-menu');
+  const servicesChevron = document.getElementById('services-chevron');
+  const mobileServicesButton = document.getElementById('mobile-services-btn');
+  const mobileServicesPanel = document.getElementById('mobile-services-panel');
+  const mobileServicesChevron = document.getElementById('mobile-services-chevron');
+
+  function setServicesMenu(open: boolean) {
+    servicesMenu?.classList.toggle('is-open', open);
+    servicesMenuButton?.setAttribute('aria-expanded', String(open));
+    servicesMegaMenu?.setAttribute('aria-hidden', String(!open));
+    servicesChevron?.classList.toggle('rotate-180', open);
+  }
+
+  function setMobileServices(open: boolean) {
+    mobileServicesPanel?.classList.toggle('hidden', !open);
+    mobileServicesButton?.setAttribute('aria-expanded', String(open));
+    mobileServicesChevron?.classList.toggle('rotate-180', open);
+  }
+
+  function setMobileMenu(open: boolean) {
+    mobileMenu?.classList.toggle('hidden', !open);
+    mobileOpenIcon?.classList.toggle('hidden', open);
+    mobileCloseIcon?.classList.toggle('hidden', !open);
+    mobileMenuButton?.setAttribute('aria-expanded', String(open));
+    mobileMenuButton?.setAttribute('aria-label', open ? 'Tutup menu navigasi' : 'Buka menu navigasi');
+  }
+
+  mobileMenuButton?.addEventListener('click', () => {
+    setMobileMenu(mobileMenu?.classList.contains('hidden') ?? true);
+  });
+
+  servicesMenuButton?.addEventListener('click', () => {
+    setServicesMenu(servicesMenuButton.getAttribute('aria-expanded') !== 'true');
+  });
+
+  mobileServicesButton?.addEventListener('click', () => {
+    setMobileServices(mobileServicesButton.getAttribute('aria-expanded') !== 'true');
+  });
+
+  mobileMenu?.querySelectorAll('a').forEach((link) => {
+    link.addEventListener('click', () => setMobileMenu(false));
+  });
+
+  window.addEventListener('resize', () => {
+    if (window.innerWidth >= 768) {
+      setMobileMenu(false);
+      setMobileServices(false);
+    } else {
+      setServicesMenu(false);
+    }
+  });
+
+  document.addEventListener('click', (event) => {
+    if (servicesMenu && !servicesMenu.contains(event.target as Node)) setServicesMenu(false);
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      setServicesMenu(false);
+      setMobileServices(false);
+    }
+  });
+
+  function updateHeaderBadge() {
+    const cart = getCart();
+    const totalItems = cart.reduce((acc: number, item: CartItem) => acc + item.quantity, 0);
+    if (badgeEl) {
+      badgeEl.innerText = totalItems.toString();
+    }
+  }
+
+  // Update badge pas pertama kali halaman di-load
+  updateHeaderBadge();
+
+  // Update badge pas ada event 'cart-updated'
+  window.addEventListener('cart-updated', updateHeaderBadge);
+
+  // Trigger buka drawer saat tombol keranjang diklik
+  cartBtn?.addEventListener('click', () => {
+    window.dispatchEvent(new Event('cart-updated'));
+  });
+</script>
+
+<style is:global>
+  .services-mega-menu {
+    transition: opacity 180ms ease, transform 180ms ease, visibility 180ms ease;
+  }
+
+  #services-menu:hover .services-mega-menu,
+  #services-menu:focus-within .services-mega-menu,
+  #services-menu.is-open .services-mega-menu {
+    visibility: visible;
+    pointer-events: auto;
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+
+  #services-menu::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    height: 1rem;
+  }
+</style>

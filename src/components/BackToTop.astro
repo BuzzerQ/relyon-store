@@ -1,0 +1,28 @@
+<button
+  id="back-to-top"
+  type="button"
+  aria-label="Kembali ke atas"
+  class="pointer-events-none fixed bottom-24 right-6 z-30 grid h-12 w-12 translate-y-3 place-items-center rounded-full border border-slate-200 bg-white text-relyon-blue opacity-0 shadow-xl transition-all duration-300 hover:bg-relyon-blue hover:text-white md:hidden dark:border-slate-700 dark:bg-relyon-darkcard dark:text-relyon-sky"
+>
+  <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m5 15 7-7 7 7" />
+  </svg>
+</button>
+
+<script>
+  const backToTop = document.getElementById('back-to-top');
+
+  function updateBackToTop() {
+    const visible = window.scrollY > 500;
+    backToTop?.classList.toggle('opacity-0', !visible);
+    backToTop?.classList.toggle('translate-y-3', !visible);
+    backToTop?.classList.toggle('pointer-events-none', !visible);
+  }
+
+  window.addEventListener('scroll', updateBackToTop, { passive: true });
+  updateBackToTop();
+
+  backToTop?.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+</script>

@@ -1,0 +1,600 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+const uniqueCategories = ['Prompt', 'Preset', 'Theme'];
+---
+
+<AdminLayout title="Admin CMS - Kelola Produk Relyon">
+  <div id="admin-loading" class="min-h-[65vh] flex flex-col items-center justify-center gap-4 text-sm text-slate-500">
+    <span class="h-9 w-9 animate-spin rounded-full border-4 border-relyon-ice border-t-relyon-blue"></span>
+    <span>Memeriksa akses admin...</span>
+  </div>
+
+  <section id="admin-content" class="hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <!-- Header Admin -->
+    <div class="relative overflow-visible rounded-3xl bg-relyon-dark p-6 text-white shadow-xl shadow-relyon-dark/10 md:p-8 mb-8">
+      <div class="absolute -right-16 -top-20 h-56 w-56 rounded-full bg-relyon-blue/30 blur-3xl"></div>
+      <div class="relative flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+        <div>
+          <div class="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-relyon-sky"><span class="h-2 w-2 rounded-full bg-relyon-yellow"></span> Admin workspace</div>
+          <h1 class="text-2xl md:text-3xl font-bold">Kelola Produk</h1>
+          <p class="text-xs md:text-sm text-slate-300 mt-2">Atur katalog aset digital Relyon Creative dari satu tempat.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <div id="account-menu" class="relative">
+            <button id="account-menu-btn" type="button" aria-expanded="false" class="flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-2.5 py-2 text-left transition-colors hover:bg-white/10">
+              <span id="account-initial" class="grid h-8 w-8 place-items-center rounded-lg bg-relyon-blue text-xs font-bold">A</span>
+              <span class="hidden max-w-[150px] sm:block">
+                <span class="block text-[10px] text-slate-400">Admin</span>
+                <span id="account-email" class="block truncate text-xs font-semibold">Memuat...</span>
+              </span>
+              <svg class="hidden h-4 w-4 text-slate-400 sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 9-7 7-7-7" /></svg>
+            </button>
+
+            <div id="account-dropdown" class="absolute right-0 top-full z-40 mt-2 hidden w-64 overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 text-relyon-dark shadow-2xl dark:border-slate-700 dark:bg-relyon-darkcard dark:text-white">
+              <div class="border-b border-slate-100 px-3 py-3 dark:border-slate-700">
+                <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Masuk sebagai</p>
+                <p id="account-email-detail" class="mt-1 truncate text-xs font-semibold">Memuat...</p>
+              </div>
+              <button id="admin-logout-btn" type="button" class="mt-1 flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-rose-600 transition-colors hover:bg-rose-50 dark:hover:bg-rose-950/40">
+                <span aria-hidden="true">↪</span><span>Keluar dari akun</span>
+              </button>
+            </div>
+          </div>
+
+          <button id="open-add-modal-btn" class="bg-relyon-blue hover:bg-relyon-sky text-white px-4 py-2.5 rounded-xl text-sm font-semibold shadow-md transition-all flex items-center gap-2 cursor-pointer w-fit"><span class="sm:hidden">+</span><span class="hidden sm:inline">+ Tambah Produk</span></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div class="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-relyon-darkcard"><p class="text-xs font-medium text-slate-500">Total produk</p><p id="stat-total" class="mt-2 text-3xl font-bold">0</p></div>
+      <div class="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-relyon-darkcard"><p class="text-xs font-medium text-slate-500">Produk aktif</p><p id="stat-active" class="mt-2 text-3xl font-bold text-relyon-blue">0</p></div>
+      <div class="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-relyon-darkcard"><p class="text-xs font-medium text-slate-500">Produk draft</p><p id="stat-draft" class="mt-2 text-3xl font-bold text-amber-500">0</p></div>
+    </div>
+
+    <!-- 🔍 CONTROL BAR: Search, Filter & Sorting -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+      <!-- Search Input -->
+      <div>
+        <input 
+          type="text" 
+          id="admin-search-input"
+          placeholder="🔍 Cari nama / slug produk..."
+          class="w-full bg-white dark:bg-relyon-darkcard border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-sm text-relyon-dark dark:text-white focus:outline-none focus:border-relyon-blue shadow-sm"
+        />
+      </div>
+
+      <!-- Filter Kategori Dinamis -->
+      <div>
+        <select 
+          id="admin-category-filter"
+          class="w-full bg-white dark:bg-relyon-darkcard border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-sm text-relyon-dark dark:text-white focus:outline-none focus:border-relyon-blue shadow-sm cursor-pointer"
+        >
+          <option value="ALL">Semua Kategori</option>
+          {uniqueCategories.map(cat => (
+            <option value={cat}>{cat}</option>
+          ))}
+        </select>
+      </div>
+
+      <!-- Filter Status -->
+      <div>
+        <select 
+          id="admin-status-filter"
+          class="w-full bg-white dark:bg-relyon-darkcard border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-sm text-relyon-dark dark:text-white focus:outline-none focus:border-relyon-blue shadow-sm cursor-pointer"
+        >
+          <option value="ALL">Semua Status</option>
+          <option value="ACTIVE">● Aktif Only</option>
+          <option value="DRAFT">○ Draft Only</option>
+        </select>
+      </div>
+
+      <!-- Sort By -->
+      <div>
+        <select 
+          id="admin-sort-filter"
+          class="w-full bg-white dark:bg-relyon-darkcard border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-sm text-relyon-dark dark:text-white focus:outline-none focus:border-relyon-blue shadow-sm cursor-pointer"
+        >
+          <option value="NEWEST">Terbaru</option>
+          <option value="PRICE_LOW">Harga: Termurah</option>
+          <option value="PRICE_HIGH">Harga: Termahal</option>
+          <option value="TITLE_ASC">Judul: A - Z</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Table List Produk -->
+    <div class="bg-white dark:bg-relyon-darkcard rounded-2xl border border-slate-100 dark:border-slate-800 overflow-hidden shadow-sm">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm border-collapse">
+          <thead class="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 font-semibold text-xs uppercase border-b border-slate-100 dark:border-slate-800">
+            <tr>
+              <th class="p-4 pl-6 text-left">Produk</th>
+              <th class="p-4 text-center whitespace-nowrap">Kategori</th>
+              <th class="p-4 text-right whitespace-nowrap">Harga</th>
+              <th class="p-4 text-center whitespace-nowrap">Status</th>
+              <th class="p-4 pr-6 text-right whitespace-nowrap">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="product-table-body" class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+            {/* Table row dirender via Client JS */}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Modal Form (Tambah / Edit) -->
+  <div id="admin-modal-backdrop" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden"></div>
+  
+  <div id="admin-modal" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-xl bg-white dark:bg-relyon-darkcard rounded-2xl shadow-2xl z-50 p-6 hidden max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
+      <h3 id="modal-title" class="font-bold text-lg text-relyon-dark dark:text-white">Tambah Produk Baru</h3>
+      <button id="close-add-modal-btn" class="text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer p-1">✕</button>
+    </div>
+
+    <form id="product-form" class="mt-4 space-y-4">
+      <input type="hidden" id="p-id" />
+
+      <div>
+        <label class="block text-xs font-semibold mb-1">Judul Produk</label>
+        <input type="text" id="p-title" required placeholder="Contoh: Canva Social Media Template Kit" class="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-relyon-dark dark:text-white focus:outline-none focus:border-relyon-blue" />
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-semibold mb-1">Kategori</label>
+          <select id="p-category-select" required class="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-relyon-dark dark:text-white focus:outline-none focus:border-relyon-blue cursor-pointer">
+            {uniqueCategories.map(cat => (
+              <option value={cat}>{cat}</option>
+            ))}
+            <option value="NEW_CATEGORY">+ Tambah Kategori Baru</option>
+          </select>
+          <!-- Input Kategori Baru (Muncul jika opsi + Tambah Kategori Baru dipilih) -->
+          <input 
+            type="text" 
+            id="p-custom-category" 
+            placeholder="Ketik kategori baru..." 
+            class="w-full mt-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-relyon-dark dark:text-white focus:outline-none focus:border-relyon-blue hidden" 
+          />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold mb-1">Harga (IDR)</label>
+          <input type="number" id="p-price" required placeholder="49000" class="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-relyon-dark dark:text-white focus:outline-none focus:border-relyon-blue" />
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold mb-1">Harga Coret / Original (Opsional)</label>
+        <input type="number" id="p-original-price" placeholder="99000" class="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-relyon-dark dark:text-white focus:outline-none focus:border-relyon-blue" />
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold mb-1">URL Gambar Thumbnail</label>
+        <input type="url" id="p-thumbnail" required placeholder="https://images.unsplash.com/..." class="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-relyon-dark dark:text-white focus:outline-none focus:border-relyon-blue" />
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold mb-1">Deskripsi Singkat</label>
+        <textarea id="p-description" rows="3" placeholder="Penjelasan mengenai isi produk..." class="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-relyon-dark dark:text-white focus:outline-none focus:border-relyon-blue"></textarea>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold mb-1">Link Lynk.id / File Akses</label>
+        <input type="url" id="p-lynk-url" required placeholder="https://lynk.id/relyoncreative/..." class="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-relyon-dark dark:text-white focus:outline-none focus:border-relyon-blue" />
+      </div>
+
+      <button type="submit" id="save-product-btn" class="w-full bg-relyon-blue hover:bg-relyon-dark text-white font-semibold py-3 rounded-xl shadow-lg transition-all text-sm cursor-pointer mt-4">
+        Simpan Produk
+      </button>
+    </form>
+  </div>
+</AdminLayout>
+
+<script>
+  import { supabase } from '../../lib/supabase';
+
+  let productsList: any[] = [];
+
+  const tbody = document.getElementById('product-table-body');
+  const searchInput = document.getElementById('admin-search-input') as HTMLInputElement;
+  const categoryFilter = document.getElementById('admin-category-filter') as HTMLSelectElement;
+  const statusFilter = document.getElementById('admin-status-filter') as HTMLSelectElement;
+  const sortFilter = document.getElementById('admin-sort-filter') as HTMLSelectElement;
+
+  const categorySelect = document.getElementById('p-category-select') as HTMLSelectElement;
+  const customCategoryInput = document.getElementById('p-custom-category') as HTMLInputElement;
+
+  const escapeHTML = (value: unknown) => String(value ?? '')
+    .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;').replaceAll("'", '&#039;');
+
+  async function initializeAdmin() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      window.location.replace('/admin/login');
+      return;
+    }
+
+    const email = session.user.email || 'Admin';
+    const initial = email.charAt(0).toUpperCase();
+    const initialEl = document.getElementById('account-initial');
+    const emailEl = document.getElementById('account-email');
+    const emailDetailEl = document.getElementById('account-email-detail');
+    if (initialEl) initialEl.textContent = initial;
+    if (emailEl) emailEl.textContent = email;
+    if (emailDetailEl) emailDetailEl.textContent = email;
+
+    const { data: allowed, error: accessError } = await supabase.rpc('is_admin');
+    if (accessError || !allowed) {
+      await supabase.auth.signOut();
+      window.location.replace('/admin/login?error=unauthorized');
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      const loading = document.getElementById('admin-loading');
+      if (loading) loading.innerHTML = '<span class="text-rose-600">Gagal memuat produk. Silakan refresh halaman.</span>';
+      return;
+    }
+
+    productsList = data || [];
+    refreshCategoryOptions();
+    updateStats();
+    renderTable();
+    document.getElementById('admin-loading')?.classList.add('hidden');
+    document.getElementById('admin-content')?.classList.remove('hidden');
+  }
+
+  function updateStats() {
+    const active = productsList.filter((product) => product.is_active === true).length;
+    const setText = (id: string, value: number) => { const el = document.getElementById(id); if (el) el.textContent = String(value); };
+    setText('stat-total', productsList.length);
+    setText('stat-active', active);
+    setText('stat-draft', productsList.length - active);
+  }
+
+  function refreshCategoryOptions() {
+    const categories = [...new Set(productsList.map((p) => p.category).filter(Boolean))];
+    categoryFilter.querySelectorAll('option:not([value="ALL"])').forEach((option) => option.remove());
+    categorySelect.querySelectorAll('option:not([value="NEW_CATEGORY"])').forEach((option) => option.remove());
+
+    categories.forEach((category) => {
+      categoryFilter.add(new Option(category, category));
+      categorySelect.add(new Option(category, category), categorySelect.querySelector('[value="NEW_CATEGORY"]'));
+    });
+  }
+
+  document.getElementById('admin-logout-btn')?.addEventListener('click', async () => {
+    await supabase.auth.signOut();
+    window.location.replace('/admin/login');
+  });
+
+  const accountMenu = document.getElementById('account-menu');
+  const accountMenuButton = document.getElementById('account-menu-btn');
+  const accountDropdown = document.getElementById('account-dropdown');
+
+  function closeAccountMenu() {
+    accountDropdown?.classList.add('hidden');
+    accountMenuButton?.setAttribute('aria-expanded', 'false');
+  }
+
+  accountMenuButton?.addEventListener('click', () => {
+    const willOpen = accountDropdown?.classList.contains('hidden');
+    accountDropdown?.classList.toggle('hidden');
+    accountMenuButton.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+  });
+
+  document.addEventListener('click', (event) => {
+    if (accountMenu && !accountMenu.contains(event.target as Node)) closeAccountMenu();
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') closeAccountMenu();
+  });
+
+  // Toggle Input Kategori Kustom
+  categorySelect?.addEventListener('change', () => {
+    if (categorySelect.value === 'NEW_CATEGORY') {
+      customCategoryInput.classList.remove('hidden');
+      customCategoryInput.setAttribute('required', 'true');
+      customCategoryInput.focus();
+    } else {
+      customCategoryInput.classList.add('hidden');
+      customCategoryInput.removeAttribute('required');
+      customCategoryInput.value = '';
+    }
+  });
+
+  // Function Render Table Row
+  function renderTable() {
+    if (!tbody) return;
+
+    const query = searchInput?.value.toLowerCase().trim() || '';
+    const selectedCategory = categoryFilter?.value || 'ALL';
+    const selectedStatus = statusFilter?.value || 'ALL';
+    const selectedSort = sortFilter?.value || 'NEWEST';
+
+    // 1. Filtering
+    let filtered = productsList.filter((p: any) => {
+      const matchSearch = p.title.toLowerCase().includes(query) || p.slug.toLowerCase().includes(query);
+      const matchCategory = selectedCategory === 'ALL' || p.category === selectedCategory;
+      const isActive = p.is_active ?? true;
+      const matchStatus = 
+        selectedStatus === 'ALL' || 
+        (selectedStatus === 'ACTIVE' && isActive) || 
+        (selectedStatus === 'DRAFT' && !isActive);
+
+      return matchSearch && matchCategory && matchStatus;
+    });
+
+    // 2. Sorting
+    filtered.sort((a: any, b: any) => {
+      if (selectedSort === 'PRICE_LOW') return a.price - b.price;
+      if (selectedSort === 'PRICE_HIGH') return b.price - a.price;
+      if (selectedSort === 'TITLE_ASC') return a.title.localeCompare(b.title);
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+
+    // 3. Render HTML dengan Alignment Rapi
+    if (filtered.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="5" class="p-8 text-center text-slate-400">Tidak ada produk yang cocok dengan filter.</td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = filtered.map((p: any) => {
+      const isActive = p.is_active ?? true;
+      const activeClass = isActive 
+        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400' 
+        : 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400';
+      const activeText = isActive ? '● Aktif' : '○ Draft';
+
+      return `
+        <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors border-b border-slate-100 dark:border-slate-800/60">
+          <td class="p-4 pl-6 flex items-center gap-3">
+            <img src="${escapeHTML(p.thumbnail)}" alt="" class="w-11 h-11 object-cover rounded-lg flex-shrink-0 bg-slate-100 dark:bg-slate-800" />
+            <div>
+              <p class="font-bold text-relyon-dark dark:text-white line-clamp-1">${escapeHTML(p.title)}</p>
+              <p class="text-xs text-slate-400">Slug: ${escapeHTML(p.slug)}</p>
+            </div>
+          </td>
+          <td class="p-4 text-center whitespace-nowrap">
+            <span class="inline-block bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2.5 py-1 rounded-md text-xs font-semibold">
+              ${escapeHTML(p.category)}
+            </span>
+          </td>
+          <td class="p-4 text-right whitespace-nowrap font-semibold text-relyon-blue dark:text-relyon-sky">
+            Rp ${Number(p.price).toLocaleString('id-ID')}
+          </td>
+          <td class="p-4 text-center whitespace-nowrap">
+            <button 
+              class="toggle-status-btn px-2.5 py-1 rounded-full text-xs font-bold cursor-pointer transition-transform active:scale-95 ${activeClass}"
+              data-id="${p.id}"
+              data-active="${isActive ? 'true' : 'false'}"
+              title="Klik untuk mengubah status"
+            >
+              ${activeText}
+            </button>
+          </td>
+          <td class="p-4 pr-6 text-right whitespace-nowrap">
+            <div class="flex items-center justify-end gap-1">
+              <button 
+                class="edit-btn p-2 rounded-lg text-slate-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-all cursor-pointer"
+                data-id="${escapeHTML(p.id)}"
+                title="Edit Produk"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                </svg>
+              </button>
+
+              <button 
+                class="delete-btn p-2 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-all cursor-pointer"
+                data-id="${p.id}"
+                title="Hapus Produk"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    bindActionButtons();
+  }
+
+  // Event Listeners Filter
+  searchInput?.addEventListener('input', renderTable);
+  categoryFilter?.addEventListener('change', renderTable);
+  statusFilter?.addEventListener('change', renderTable);
+  sortFilter?.addEventListener('change', renderTable);
+
+  function bindActionButtons() {
+    // Edit Handler
+    document.querySelectorAll('.edit-btn').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        const target = e.currentTarget as HTMLElement;
+        const id = target.getAttribute('data-id');
+        const p = productsList.find((product) => product.id === id);
+        if (!p) return;
+
+        (document.getElementById('p-id') as HTMLInputElement).value = p.id;
+        (document.getElementById('p-title') as HTMLInputElement).value = p.title;
+
+        // Set Kategori pada Form Edit
+        const options = Array.from(categorySelect.options).map(o => o.value);
+        if (options.includes(p.category)) {
+          categorySelect.value = p.category;
+          customCategoryInput.classList.add('hidden');
+          customCategoryInput.removeAttribute('required');
+        } else {
+          categorySelect.value = 'NEW_CATEGORY';
+          customCategoryInput.classList.remove('hidden');
+          customCategoryInput.setAttribute('required', 'true');
+          customCategoryInput.value = p.category;
+        }
+
+        (document.getElementById('p-price') as HTMLInputElement).value = p.price;
+        (document.getElementById('p-original-price') as HTMLInputElement).value = p.original_price || '';
+        (document.getElementById('p-thumbnail') as HTMLInputElement).value = p.thumbnail;
+        (document.getElementById('p-description') as HTMLTextAreaElement).value = p.description || '';
+        (document.getElementById('p-lynk-url') as HTMLInputElement).value = p.lynk_url || '';
+
+        toggleModal(true, true);
+      });
+    });
+
+    // Delete Handler
+    document.querySelectorAll('.delete-btn').forEach((btn) => {
+      btn.addEventListener('click', async (e) => {
+        const target = e.currentTarget as HTMLElement;
+        const id = target.getAttribute('data-id');
+        const title = productsList.find((product) => product.id === id)?.title || 'ini';
+
+        if (!id) return;
+        if (!confirm(`Apakah Anda yakin ingin menghapus produk "${title}" secara permanen?`)) return;
+
+        try {
+          const { error } = await supabase.from('products').delete().eq('id', id);
+          if (error) throw error;
+
+          alert('🗑️ Produk berhasil dihapus!');
+          window.location.reload();
+        } catch (err: any) {
+          alert('Gagal menghapus produk: ' + err.message);
+        }
+      });
+    });
+
+    // Toggle Status Handler
+    document.querySelectorAll('.toggle-status-btn').forEach((btn) => {
+      btn.addEventListener('click', async (e) => {
+        const target = e.currentTarget as HTMLElement;
+        const id = target.getAttribute('data-id');
+        const currentActive = target.getAttribute('data-active') === 'true';
+
+        if (!id) return;
+
+        try {
+          const { error } = await supabase
+            .from('products')
+            .update({ is_active: !currentActive })
+            .eq('id', id);
+
+          if (error) throw error;
+          window.location.reload();
+        } catch (err: any) {
+          alert('Gagal mengubah status: ' + err.message);
+        }
+      });
+    });
+  }
+
+  // Modal Control Logic
+  const modal = document.getElementById('admin-modal');
+  const backdrop = document.getElementById('admin-modal-backdrop');
+  const openBtn = document.getElementById('open-add-modal-btn');
+  const closeBtn = document.getElementById('close-add-modal-btn');
+  const form = document.getElementById('product-form') as HTMLFormElement;
+  const modalTitle = document.getElementById('modal-title');
+
+  function toggleModal(show: boolean, isEdit = false) {
+    if (show) {
+      if (!isEdit) {
+        form.reset();
+        (document.getElementById('p-id') as HTMLInputElement).value = '';
+        customCategoryInput.classList.add('hidden');
+        customCategoryInput.removeAttribute('required');
+        if (modalTitle) modalTitle.innerText = 'Tambah Produk Baru';
+      } else {
+        if (modalTitle) modalTitle.innerText = 'Edit Produk';
+      }
+      modal?.classList.remove('hidden');
+      backdrop?.classList.remove('hidden');
+    } else {
+      modal?.classList.add('hidden');
+      backdrop?.classList.add('hidden');
+    }
+  }
+
+  openBtn?.addEventListener('click', () => toggleModal(true, false));
+  closeBtn?.addEventListener('click', () => toggleModal(false));
+  backdrop?.addEventListener('click', () => toggleModal(false));
+
+  // Form Submit (Add / Edit)
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const productId = (document.getElementById('p-id') as HTMLInputElement).value;
+    const title = (document.getElementById('p-title') as HTMLInputElement).value;
+    
+    // Ambil nilai kategori (apakah dari dropdown atau input manual)
+    const category = categorySelect.value === 'NEW_CATEGORY' 
+      ? customCategoryInput.value.trim() 
+      : categorySelect.value;
+
+    const price = Number((document.getElementById('p-price') as HTMLInputElement).value);
+    const originalPriceVal = (document.getElementById('p-original-price') as HTMLInputElement).value;
+    const originalPrice = originalPriceVal ? Number(originalPriceVal) : null;
+    const thumbnail = (document.getElementById('p-thumbnail') as HTMLInputElement).value;
+    const description = (document.getElementById('p-description') as HTMLTextAreaElement).value;
+    const lynkUrl = (document.getElementById('p-lynk-url') as HTMLInputElement).value;
+
+    const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+
+    try {
+      if (productId) {
+        const { error } = await supabase
+          .from('products')
+          .update({
+            title,
+            slug,
+            category,
+            price,
+            original_price: originalPrice,
+            thumbnail,
+            description,
+            lynk_url: lynkUrl,
+          })
+          .eq('id', productId);
+
+        if (error) throw error;
+        alert('✨ Produk berhasil diperbarui!');
+      } else {
+        const { error } = await supabase.from('products').insert({
+          id: crypto.randomUUID(),
+          title,
+          slug,
+          category,
+          price,
+          original_price: originalPrice,
+          thumbnail,
+          description,
+          lynk_url: lynkUrl,
+          is_active: true
+        });
+
+        if (error) throw error;
+        alert('🎉 Produk berhasil ditambahkan!');
+      }
+
+      window.location.reload();
+    } catch (err: any) {
+      alert('Gagal menyimpan produk: ' + err.message);
+    }
+  });
+
+  initializeAdmin();
+</script>

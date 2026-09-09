@@ -1,0 +1,385 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+---
+
+<AdminLayout title="Admin CMS - Pesanan Relyon">
+  <div id="orders-loading" class="flex min-h-[65vh] flex-col items-center justify-center gap-4 text-sm text-slate-500">
+    <span class="h-9 w-9 animate-spin rounded-full border-4 border-relyon-ice border-t-relyon-blue"></span>
+    <span>Memuat pesanan...</span>
+  </div>
+
+  <section id="orders-content" class="mx-auto hidden max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
+    <div class="relative mb-8 overflow-hidden rounded-3xl bg-relyon-dark p-6 text-white shadow-xl shadow-relyon-dark/10 md:p-8">
+      <div class="absolute -right-16 -top-20 h-56 w-56 rounded-full bg-relyon-blue/30 blur-3xl"></div>
+      <div class="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div class="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-relyon-sky"><span class="h-2 w-2 rounded-full bg-relyon-yellow"></span> Admin workspace</div>
+          <h1 class="text-2xl font-bold md:text-3xl">Kelola Pesanan</h1>
+          <p class="mt-2 text-xs text-slate-300 md:text-sm">Pantau pembayaran dan kirim akses produk dari satu tempat.</p>
+        </div>
+        <button id="orders-logout-btn" type="button" class="w-fit rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-xs font-semibold transition-colors hover:bg-white/10">Keluar</button>
+      </div>
+    </div>
+
+    <div class="mb-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div class="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-relyon-darkcard"><p class="text-[11px] font-medium text-slate-500">Total pesanan</p><p id="stat-orders-total" class="mt-2 text-2xl font-bold">0</p></div>
+      <div class="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-relyon-darkcard"><p class="text-[11px] font-medium text-slate-500">Menunggu</p><p id="stat-orders-pending" class="mt-2 text-2xl font-bold text-amber-500">0</p></div>
+      <div class="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-relyon-darkcard"><p class="text-[11px] font-medium text-slate-500">Sudah dibayar</p><p id="stat-orders-paid" class="mt-2 text-2xl font-bold text-relyon-blue">0</p></div>
+      <div class="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-relyon-darkcard"><p class="text-[11px] font-medium text-slate-500">Selesai</p><p id="stat-orders-completed" class="mt-2 text-2xl font-bold text-emerald-500">0</p></div>
+    </div>
+
+    <div class="orders-toolbar mb-6">
+      <input id="order-search" type="search" placeholder="Cari nomor order, nama, email, atau WhatsApp..." aria-label="Cari pesanan" class="min-w-0 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-relyon-blue dark:border-slate-800 dark:bg-relyon-darkcard" />
+      <select id="order-status-filter" class="min-w-0 w-full cursor-pointer rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm outline-none focus:border-relyon-blue dark:border-slate-800 dark:bg-relyon-darkcard">
+        <option value="all">Semua status</option>
+        <option value="pending">Menunggu</option>
+        <option value="paid">Sudah dibayar</option>
+        <option value="completed">Selesai</option>
+        <option value="cancelled">Dibatalkan</option>
+      </select>
+      <div class="flex rounded-xl border border-slate-200 bg-white p-1 dark:border-slate-800 dark:bg-relyon-darkcard" aria-label="Pilihan tampilan pesanan">
+        <button id="view-list-btn" type="button" class="view-button grid h-9 w-10 place-items-center rounded-lg text-slate-500 transition" aria-label="Tampilan daftar" aria-pressed="true" title="Tampilan daftar">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" /></svg>
+        </button>
+        <button id="view-grid-btn" type="button" class="view-button grid h-9 w-10 place-items-center rounded-lg text-slate-500 transition" aria-label="Tampilan grid" aria-pressed="false" title="Tampilan grid">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4h6v6H4V4Zm10 0h6v6h-6V4ZM4 14h6v6H4v-6Zm10 0h6v6h-6v-6Z" /></svg>
+        </button>
+      </div>
+    </div>
+
+    <div id="orders-list" class="space-y-4"></div>
+    <div id="orders-empty" class="hidden rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-16 text-center dark:border-slate-700 dark:bg-relyon-darkcard">
+      <p class="text-3xl">📦</p>
+      <p class="mt-3 text-sm font-semibold">Belum ada pesanan yang cocok</p>
+      <p class="mt-1 text-xs text-slate-400">Pesanan baru akan tampil otomatis di halaman ini.</p>
+    </div>
+  </section>
+</AdminLayout>
+
+<script>
+  import { supabase } from '../../lib/supabase';
+
+  type ProductInfo = { title: string; thumbnail: string | null; category: string | null };
+  type OrderItem = { id: string; product_id: string; price: number | string; lynk_url: string | null; products: ProductInfo | ProductInfo[] | null };
+  type StoreOrder = {
+    id: string; order_number: string; customer_name: string; customer_email: string;
+    customer_phone: string | null; total_amount: number | string; status: string;
+    payment_gateway_ref: string | null; access_sent_at: string | null; created_at: string; order_items: OrderItem[];
+  };
+
+  let orders: StoreOrder[] = [];
+  const listEl = document.getElementById('orders-list');
+  const emptyEl = document.getElementById('orders-empty');
+  const searchEl = document.getElementById('order-search') as HTMLInputElement;
+  const filterEl = document.getElementById('order-status-filter') as HTMLSelectElement;
+  const listViewButton = document.getElementById('view-list-btn');
+  const gridViewButton = document.getElementById('view-grid-btn');
+  type OrdersView = 'list' | 'grid';
+
+  const escapeHTML = (value: unknown) => String(value ?? '')
+    .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;').replaceAll("'", '&#039;');
+  const formatRupiah = (value: number | string) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(Number(value));
+  const formatDate = (value: string) => new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
+  const getProduct = (item: OrderItem) => Array.isArray(item.products) ? item.products[0] : item.products;
+  const statusLabel: Record<string, string> = { pending: 'Menunggu', paid: 'Sudah dibayar', completed: 'Selesai', cancelled: 'Dibatalkan' };
+  const statusClass: Record<string, string> = {
+    pending: 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300',
+    paid: 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300',
+    completed: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300',
+    cancelled: 'bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300'
+  };
+
+  async function initializeOrders() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return window.location.replace('/admin/login');
+
+    const { data: allowed, error: accessError } = await supabase.rpc('is_admin');
+    if (accessError || !allowed) {
+      await supabase.auth.signOut();
+      return window.location.replace('/admin/login?error=unauthorized');
+    }
+
+    await loadOrders();
+    document.getElementById('orders-loading')?.classList.add('hidden');
+    document.getElementById('orders-content')?.classList.remove('hidden');
+  }
+
+  async function loadOrders() {
+    const { data, error } = await supabase
+      .from('orders')
+      .select(`id, order_number, customer_name, customer_email, customer_phone, total_amount, status, payment_gateway_ref, access_sent_at, created_at, order_items(id, product_id, price, lynk_url, products(title, thumbnail, category))`)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      if (listEl) listEl.innerHTML = `<div class="rounded-2xl bg-rose-50 p-5 text-sm text-rose-700">Gagal memuat pesanan: ${escapeHTML(error.message)}</div>`;
+      return;
+    }
+    orders = (data || []) as StoreOrder[];
+    updateStats();
+    renderOrders();
+  }
+
+  function updateStats() {
+    const set = (id: string, value: number) => { const el = document.getElementById(id); if (el) el.textContent = String(value); };
+    set('stat-orders-total', orders.length);
+    set('stat-orders-pending', orders.filter((order) => order.status === 'pending').length);
+    set('stat-orders-paid', orders.filter((order) => order.status === 'paid').length);
+    set('stat-orders-completed', orders.filter((order) => order.status === 'completed').length);
+  }
+
+  function renderOrders() {
+    if (!listEl || !emptyEl) return;
+    const query = searchEl.value.toLowerCase().trim();
+    const status = filterEl.value;
+    const filtered = orders.filter((order) => {
+      const matchesStatus = status === 'all' || order.status === status;
+      const haystack = `${order.order_number} ${order.customer_name} ${order.customer_email} ${order.customer_phone || ''}`.toLowerCase();
+      return matchesStatus && haystack.includes(query);
+    });
+
+    emptyEl.classList.toggle('hidden', filtered.length > 0);
+    listEl.innerHTML = filtered.map((order) => {
+      const items = order.order_items || [];
+      const linksReady = items.length > 0 && items.every((item) => Boolean(item.lynk_url));
+      const accessSent = Boolean(order.access_sent_at);
+      const canComplete = linksReady && accessSent;
+      return `
+        <article class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-relyon-darkcard" data-order-id="${escapeHTML(order.id)}">
+          <button type="button" class="order-toggle flex w-full items-start justify-between gap-4 p-5 text-left" aria-expanded="false">
+            <div class="min-w-0">
+              <div class="flex flex-wrap items-center gap-2">
+                <strong class="text-sm text-relyon-dark dark:text-white">${escapeHTML(order.order_number)}</strong>
+                <span class="rounded-full px-2.5 py-1 text-[10px] font-bold ${statusClass[order.status] || 'bg-slate-100 text-slate-600'}">${escapeHTML(statusLabel[order.status] || order.status)}</span>
+              </div>
+              <p class="mt-2 truncate text-xs font-semibold text-slate-600 dark:text-slate-300">${escapeHTML(order.customer_name)} · ${escapeHTML(order.customer_email)}</p>
+              <p class="mt-1 text-[11px] text-slate-400">${escapeHTML(formatDate(order.created_at))} · ${items.length} produk</p>
+            </div>
+            <div class="flex shrink-0 items-center gap-3">
+              <strong class="hidden text-sm text-relyon-blue sm:block">${formatRupiah(order.total_amount)}</strong>
+              <span class="order-chevron text-slate-400 transition-transform">⌄</span>
+            </div>
+          </button>
+
+          <div class="order-detail hidden border-t border-slate-100 p-5 dark:border-slate-800">
+            <div class="mb-5 grid gap-3 rounded-xl bg-slate-50 p-4 text-xs sm:grid-cols-3 dark:bg-slate-900/40">
+              <div><span class="block text-slate-400">WhatsApp</span><strong class="mt-1 block">${escapeHTML(order.customer_phone || '-')}</strong></div>
+              <div><span class="block text-slate-400">Total resmi</span><strong class="mt-1 block text-relyon-blue">${formatRupiah(order.total_amount)}</strong></div>
+              <div><span class="block text-slate-400">Akses dikirim</span><strong class="mt-1 block ${accessSent ? 'text-emerald-600' : 'text-amber-600'}">${accessSent ? escapeHTML(formatDate(order.access_sent_at!)) : 'Belum dikirim'}</strong></div>
+            </div>
+
+            <div class="space-y-3">
+              ${items.map((item) => {
+                const product = getProduct(item);
+                return `<div class="grid gap-3 rounded-xl border border-slate-100 p-3 sm:grid-cols-[1fr_1.4fr_auto] sm:items-center dark:border-slate-800">
+                  <div class="flex min-w-0 items-center gap-3">
+                    ${product?.thumbnail ? `<img src="${escapeHTML(product.thumbnail)}" alt="" class="h-11 w-11 rounded-lg object-cover" />` : ''}
+                    <div class="min-w-0"><p class="truncate text-xs font-semibold">${escapeHTML(product?.title || 'Produk')}</p><p class="mt-1 text-[10px] text-slate-400">${formatRupiah(item.price)}</p></div>
+                  </div>
+                  <input type="url" value="${escapeHTML(item.lynk_url || '')}" placeholder="https://lynk.id/..." data-item-id="${escapeHTML(item.id)}" class="access-link w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs outline-none focus:border-relyon-blue dark:border-slate-700 dark:bg-slate-900/50" />
+                  <button type="button" data-item-id="${escapeHTML(item.id)}" class="save-link rounded-xl bg-relyon-blue px-4 py-2.5 text-xs font-semibold text-white hover:bg-relyon-dark">Simpan link</button>
+                </div>`;
+              }).join('')}
+            </div>
+
+            <div class="mt-5 grid gap-3 border-t border-slate-100 pt-5 sm:grid-cols-[220px_1fr_auto] dark:border-slate-800">
+              <select class="order-status rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs outline-none focus:border-relyon-blue dark:border-slate-700 dark:bg-relyon-darkcard" data-order-id="${escapeHTML(order.id)}">
+                ${Object.entries(statusLabel).map(([value, label]) => `<option value="${value}" ${order.status === value ? 'selected' : ''} ${value === 'completed' && !canComplete ? 'disabled' : ''}>${label}${value === 'completed' && !canComplete ? ' — kirim akses dahulu' : ''}</option>`).join('')}
+              </select>
+              <input class="payment-ref rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs outline-none focus:border-relyon-blue dark:border-slate-700 dark:bg-relyon-darkcard" value="${escapeHTML(order.payment_gateway_ref || '')}" placeholder="Referensi pembayaran (opsional)" />
+              <button type="button" class="save-order rounded-xl border border-relyon-blue px-4 py-2.5 text-xs font-semibold text-relyon-blue hover:bg-relyon-blue hover:text-white">Simpan status</button>
+            </div>
+
+            <button type="button" class="send-whatsapp mt-3 w-full rounded-xl px-4 py-3 text-xs font-semibold transition disabled:cursor-not-allowed" ${linksReady && order.customer_phone ? '' : 'disabled'}>
+              ${linksReady ? (accessSent ? 'Kirim ulang akses melalui WhatsApp' : 'Kirim akses melalui WhatsApp') : 'Lengkapi seluruh link akses dahulu'}
+            </button>
+          </div>
+        </article>`;
+    }).join('');
+  }
+
+  function setOrdersView(view: OrdersView) {
+    if (!listEl) return;
+    listEl.classList.toggle('view-grid', view === 'grid');
+    listEl.classList.toggle('view-list', view === 'list');
+    listViewButton?.classList.toggle('is-active', view === 'list');
+    gridViewButton?.classList.toggle('is-active', view === 'grid');
+    listViewButton?.setAttribute('aria-pressed', String(view === 'list'));
+    gridViewButton?.setAttribute('aria-pressed', String(view === 'grid'));
+    localStorage.setItem('relyon_orders_view', view);
+  }
+
+  listEl?.addEventListener('click', async (event) => {
+    const target = event.target as HTMLElement;
+    const article = target.closest<HTMLElement>('[data-order-id]');
+    if (!article) return;
+    const orderId = article.dataset.orderId || '';
+    const order = orders.find((entry) => entry.id === orderId);
+    if (!order) return;
+
+    const toggle = target.closest<HTMLButtonElement>('.order-toggle');
+    if (toggle) {
+      const detail = article.querySelector('.order-detail');
+      const willOpen = detail?.classList.contains('hidden') ?? false;
+      detail?.classList.toggle('hidden');
+      toggle.setAttribute('aria-expanded', String(willOpen));
+      article.querySelector('.order-chevron')?.classList.toggle('rotate-180', willOpen);
+      return;
+    }
+
+    const saveLink = target.closest<HTMLButtonElement>('.save-link');
+    if (saveLink) {
+      const itemId = saveLink.dataset.itemId || '';
+      const input = article.querySelector<HTMLInputElement>(`.access-link[data-item-id="${CSS.escape(itemId)}"]`);
+      const url = input?.value.trim() || '';
+      if (url && !/^https:\/\//i.test(url)) return alert('Link harus diawali https://');
+      saveLink.disabled = true;
+      saveLink.textContent = 'Menyimpan...';
+      const { error } = await supabase.from('order_items').update({ lynk_url: url || null }).eq('id', itemId);
+      if (error) alert(`Gagal menyimpan link: ${error.message}`);
+      else await loadOrders();
+      return;
+    }
+
+    const saveOrder = target.closest<HTMLButtonElement>('.save-order');
+    if (saveOrder) {
+      const status = article.querySelector<HTMLSelectElement>('.order-status')?.value;
+      const paymentRef = article.querySelector<HTMLInputElement>('.payment-ref')?.value.trim() || null;
+      const linksReady = order.order_items.length > 0 && order.order_items.every((item) => Boolean(item.lynk_url));
+      if (status === 'completed' && !linksReady) {
+        return alert('Status belum bisa diselesaikan. Lengkapi seluruh link akses terlebih dahulu.');
+      }
+      if (status === 'completed' && !order.access_sent_at) {
+        return alert('Status belum bisa diselesaikan. Klik “Kirim akses melalui WhatsApp” terlebih dahulu.');
+      }
+      saveOrder.disabled = true;
+      saveOrder.textContent = 'Menyimpan...';
+      const { error } = await supabase.from('orders').update({ status, payment_gateway_ref: paymentRef }).eq('id', orderId);
+      if (error) alert(`Gagal mengubah pesanan: ${error.message}`);
+      else await loadOrders();
+      return;
+    }
+
+    const whatsappButton = target.closest<HTMLButtonElement>('.send-whatsapp');
+    if (whatsappButton) {
+      const links = order.order_items.filter((item) => item.lynk_url);
+      if (!order.customer_phone || links.length !== order.order_items.length) return;
+      const itemText = links.map((item, index) => `${index + 1}. *${getProduct(item)?.title || 'Produk'}*\n${item.lynk_url}`).join('\n\n');
+      const message = `Halo *${order.customer_name}*, pembayaran pesanan *${order.order_number}* telah kami konfirmasi. ✅\n\nBerikut akses produk kamu:\n\n${itemText}\n\nTerima kasih telah memilih Relyon Creative!`;
+      window.open(`https://wa.me/${order.customer_phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');
+
+      whatsappButton.disabled = true;
+      whatsappButton.textContent = 'Mencatat pengiriman...';
+      const { error } = await supabase.from('orders').update({ access_sent_at: new Date().toISOString() }).eq('id', orderId);
+      if (error) {
+        alert(`WhatsApp terbuka, tetapi catatan pengiriman gagal disimpan: ${error.message}`);
+        whatsappButton.disabled = false;
+        whatsappButton.textContent = 'Kirim akses melalui WhatsApp';
+      } else {
+        await loadOrders();
+      }
+    }
+  });
+
+  searchEl?.addEventListener('input', renderOrders);
+  filterEl?.addEventListener('change', renderOrders);
+  listViewButton?.addEventListener('click', () => setOrdersView('list'));
+  gridViewButton?.addEventListener('click', () => setOrdersView('grid'));
+  document.getElementById('orders-logout-btn')?.addEventListener('click', async () => {
+    await supabase.auth.signOut();
+    window.location.replace('/admin/login');
+  });
+
+  const savedView = localStorage.getItem('relyon_orders_view');
+  setOrdersView(savedView === 'grid' ? 'grid' : 'list');
+  initializeOrders();
+</script>
+
+<style is:global>
+  .orders-toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(112px, 220px) auto;
+    align-items: stretch;
+    gap: 0.75rem;
+    width: 100%;
+  }
+
+  .orders-toolbar > * {
+    min-width: 0;
+  }
+
+  @media (max-width: 520px) {
+    .orders-toolbar {
+      grid-template-columns: minmax(0, 1fr) 112px 86px;
+      gap: 0.5rem;
+    }
+
+    .orders-toolbar input,
+    .orders-toolbar select {
+      padding-left: 0.75rem;
+      padding-right: 0.75rem;
+      font-size: 0.75rem;
+    }
+  }
+
+  .view-button.is-active {
+    background-color: #1565ff;
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgb(21 101 255 / 20%);
+  }
+
+  #orders-list.view-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+  }
+
+  #orders-list.view-grid > article {
+    align-self: start;
+  }
+
+  #orders-list.view-grid .order-toggle {
+    min-height: 132px;
+  }
+
+  #orders-list.view-grid .order-detail > .grid,
+  #orders-list.view-grid .order-detail .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  @media (min-width: 768px) {
+    #orders-list.view-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 1280px) {
+    #orders-list.view-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  .send-whatsapp {
+    background-color: #16a34a !important;
+    color: #ffffff !important;
+    border: 1px solid #15803d !important;
+    box-shadow: 0 8px 20px rgb(22 163 74 / 18%);
+  }
+
+  .send-whatsapp:hover:not(:disabled) {
+    background-color: #15803d !important;
+  }
+
+  .send-whatsapp:disabled {
+    background-color: #e2e8f0 !important;
+    border-color: #cbd5e1 !important;
+    color: #64748b !important;
+    box-shadow: none;
+  }
+
+  .dark .send-whatsapp:disabled {
+    background-color: #334155 !important;
+    border-color: #475569 !important;
+    color: #cbd5e1 !important;
+  }
+</style>

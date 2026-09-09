@@ -1,0 +1,161 @@
+---
+---
+
+<!-- Overlay backdrop -->
+<div id="cart-backdrop" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden transition-opacity" aria-hidden="true"></div>
+
+<!-- Cart Drawer Container -->
+<aside id="cart-drawer" class="fixed top-0 right-0 h-[100dvh] w-full max-w-md bg-white dark:bg-relyon-darkcard shadow-2xl z-50 transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col" role="dialog" aria-modal="true" aria-labelledby="cart-title" aria-hidden="true">
+  
+  <!-- Header -->
+  <div class="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <span class="text-xl">🛍️</span>
+      <h2 id="cart-title" class="font-bold text-lg text-relyon-dark dark:text-white">Keranjang Belanja</h2>
+    </div>
+    <button id="close-cart-btn" type="button" aria-label="Tutup keranjang" class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-lg">
+      ✕
+    </button>
+  </div>
+
+  <!-- Cart Items List -->
+  <div id="cart-items-container" class="flex-grow overflow-y-auto p-5 space-y-4">
+    <!-- Item dimasukkan via JavaScript -->
+  </div>
+
+  <!-- Footer & Checkout CTA -->
+  <div class="p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-relyon-darkbg/50">
+    <div class="flex justify-end mb-3">
+      <button id="clear-cart-btn" type="button" class="hidden text-xs font-semibold text-slate-500 hover:text-rose-600 transition-colors">
+        Kosongkan keranjang
+      </button>
+    </div>
+    <div class="flex items-center justify-between mb-4">
+      <span class="text-sm text-slate-500 dark:text-slate-400 font-medium">Total Pembayaran:</span>
+      <span id="cart-total-price" class="text-xl font-extrabold text-relyon-blue dark:text-relyon-sky">Rp 0</span>
+    </div>
+
+    <button id="checkout-btn" type="button" class="w-full bg-relyon-blue hover:bg-relyon-dark disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none disabled:cursor-not-allowed text-white font-semibold py-3.5 rounded-xl shadow-lg shadow-relyon-blue/20 transition-all text-sm flex items-center justify-center gap-2">
+      <span>Lanjut ke Pembayaran</span>
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7-7 7M3 12h18" />
+      </svg>
+    </button>
+  </div>
+
+</aside>
+
+<script>
+  import { clearCart, getCart, removeFromCart, type CartItem } from '../lib/cartStore';
+
+  const drawer = document.getElementById('cart-drawer');
+  const backdrop = document.getElementById('cart-backdrop');
+  const closeBtn = document.getElementById('close-cart-btn');
+  const itemsContainer = document.getElementById('cart-items-container');
+  const totalPriceEl = document.getElementById('cart-total-price');
+  const checkoutBtn = document.getElementById('checkout-btn') as HTMLButtonElement | null;
+  const clearCartBtn = document.getElementById('clear-cart-btn');
+
+  const formatRupiah = (val: number) => {
+    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val);
+  };
+
+  function renderCart() {
+    const cart = getCart();
+    
+    if (!itemsContainer || !totalPriceEl) return;
+
+    if (cart.length === 0) {
+      itemsContainer.innerHTML = `
+        <div class="h-full min-h-64 flex flex-col items-center justify-center text-center py-12">
+          <p class="text-4xl mb-2">🛒</p>
+          <p class="text-sm font-semibold text-slate-600 dark:text-slate-300">Keranjang masih kosong</p>
+          <p class="text-xs text-slate-400 mt-1">Pilih aset digital menarik dari katalog kami!</p>
+          <a href="/katalog" class="mt-5 inline-flex px-4 py-2.5 rounded-xl bg-relyon-blue text-white text-xs font-semibold hover:bg-relyon-dark transition-colors">Lihat Katalog</a>
+        </div>
+      `;
+      totalPriceEl.innerText = formatRupiah(0);
+      checkoutBtn?.setAttribute('disabled', 'true');
+      clearCartBtn?.classList.add('hidden');
+      return;
+    }
+
+    checkoutBtn?.removeAttribute('disabled');
+    clearCartBtn?.classList.remove('hidden');
+
+    let total = 0;
+    itemsContainer.innerHTML = cart.map((item: CartItem) => {
+      total += item.price * item.quantity;
+      return `
+        <div class="flex gap-4 p-3 bg-white dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-xl items-center">
+          <img src="${item.thumbnail}" alt="" class="w-16 h-16 object-cover rounded-lg flex-shrink-0" />
+          <div class="flex-grow min-w-0">
+            <h4 class="text-xs font-bold text-relyon-dark dark:text-white truncate">${item.title}</h4>
+            <p class="text-xs text-relyon-blue dark:text-relyon-sky font-semibold mt-1">${formatRupiah(item.price)}</p>
+            <p class="text-[10px] text-slate-400 mt-0.5">1 produk digital</p>
+          </div>
+          <button type="button" aria-label="Hapus ${item.title}" class="remove-item-btn text-xs text-rose-500 hover:text-rose-700 p-2 rounded-lg" data-id="${item.id}">
+            🗑️
+          </button>
+        </div>
+      `;
+    }).join('');
+
+    totalPriceEl.innerText = formatRupiah(total);
+
+    // Bind event listener hapus
+    document.querySelectorAll('.remove-item-btn').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
+        if (id) {
+          removeFromCart(id);
+        }
+      });
+    });
+  }
+
+  function toggleCart(open: boolean) {
+    if (open) {
+      renderCart();
+      drawer?.classList.remove('translate-x-full');
+      backdrop?.classList.remove('hidden');
+      drawer?.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+      closeBtn?.focus();
+    } else {
+      drawer?.classList.add('translate-x-full');
+      backdrop?.classList.add('hidden');
+      drawer?.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+  }
+
+  closeBtn?.addEventListener('click', () => toggleCart(false));
+  backdrop?.addEventListener('click', () => toggleCart(false));
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && drawer?.getAttribute('aria-hidden') === 'false') {
+      toggleCart(false);
+    }
+  });
+
+  window.addEventListener('cart-updated', () => {
+    toggleCart(true);
+  });
+
+  clearCartBtn?.addEventListener('click', () => {
+    if (confirm('Kosongkan semua produk dari keranjang?')) clearCart();
+  });
+
+  checkoutBtn?.addEventListener('click', () => {
+    const cart = getCart();
+    if (cart.length === 0) {
+      alert('Keranjang belanjaan kamu masih kosong!');
+      return;
+    }
+    // Tutup drawer
+    toggleCart(false);
+    // Trigger buka modal checkout
+    window.dispatchEvent(new Event('open-checkout-modal'));
+  });
+</script>

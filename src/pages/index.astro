@@ -1,17 +1,191 @@
 ---
+import MainLayout from '../layouts/MainLayout.astro';
+import Hero from '../components/homepage/Hero.astro';
+import ServiceStats from '../components/homepage/ServiceStats.astro';
+import Features from '../components/homepage/Features.astro';
+import ProductFilter from '../components/homepage/ProductFilter.astro';
+import ProductCard from '../components/homepage/ProductCard.astro';
+import Testimonials from '../components/homepage/Testimonials.astro';
+import FAQ from '../components/homepage/FAQ.astro';
+import { supabase } from '../lib/supabase';
 
+// Fetch seluruh data produk aktif dari Supabase
+const { data: products, error } = await supabase
+  .from('products')
+  .select('id, title, slug, category, price, original_price, thumbnail, created_at')
+  .eq('is_active', true)
+  .order('created_at', { ascending: false });
+
+if (error) {
+  console.error('❌ Error fetching products from Supabase:', error.message);
+} else {
+  console.log('✅ Data fetched successfully, total items:', products?.length);
+}
+
+const rawProducts = products || [];
+
+// 💡 LOGIKA SMART PICK (Maks 10 item, minimal 1 item per kategori unik)
+const selectedProducts: typeof rawProducts = [];
+const uniqueCategoriesSeen = new Set<string>();
+const leftoverProducts: typeof rawProducts = [];
+
+// Tahap 1: Ambil 1 produk pertama dari setiap kategori unik
+for (const item of rawProducts) {
+  if (selectedProducts.length >= 10) break;
+  if (item.category && !uniqueCategoriesSeen.has(item.category)) {
+    uniqueCategoriesSeen.add(item.category);
+    selectedProducts.push(item);
+  } else {
+    leftoverProducts.push(item);
+  }
+}
+
+// Tahap 2: Jika belum capai 10 item, isi sisanya dari produk yang belum terambil
+for (const item of leftoverProducts) {
+  if (selectedProducts.length >= 10) break;
+  selectedProducts.push(item);
+}
+
+// Map ke format prop ProductCard (PASTIKAN slug IKUT DITERUSKAN)
+const dummyProducts = selectedProducts.map(item => ({
+  id: item.id,
+  title: item.title,
+  slug: item.slug, // 👈 PENTING: Menyediakan slug untuk link ke /katalog/[slug]
+  category: item.category,
+  price: Number(item.price),
+  originalPrice: item.original_price ? Number(item.original_price) : undefined,
+  thumbnail: item.thumbnail,
+}));
+
+// 💡 Kategori dinamis khusus untuk tombol filter beranda
+const dynamicCategories = ['Semua', ...new Set(dummyProducts.map(item => item.category).filter(Boolean))];
+const hasProducts = dummyProducts.length > 0;
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<MainLayout title="Relyon Creative - Digital Asset & Solution Store">
+  <Hero />
+  <ServiceStats />
+  <Features />
+
+  <section id="katalog" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <div class="reveal flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+      <div>
+        <div class="inline-flex items-center gap-2 text-xs font-semibold text-relyon-blue dark:text-relyon-sky uppercase tracking-wider mb-2">
+          <span>✨</span> Featured Assets
+        </div>
+        <h2 class="text-2xl md:text-3xl font-bold text-relyon-dark dark:text-white">Katalog Produk Pilihan</h2>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Aset digital terbaik siap pakai untuk mempercepat kerjaan kamu</p>
+      </div>
+
+      {hasProducts && <div class="flex items-center gap-3">
+        <a 
+          href="/katalog" 
+          class="hidden sm:inline-flex items-center gap-2 bg-relyon-ice dark:bg-slate-800/80 text-relyon-blue dark:text-relyon-sky hover:bg-relyon-blue hover:text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200"
+        >
+          Lihat Semua
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7-7 7M3 12h18" />
+          </svg>
+        </a>
+      </div>}
+    </div>
+
+    {hasProducts ? <>
+      <div class="reveal delay-100">
+        <ProductFilter categories={dynamicCategories} />
+      </div>
+
+      <div class="reveal delay-200 relative overflow-visible">
+        <button id="prev-slide-btn" aria-label="Produk sebelumnya" class="absolute -left-5 top-1/2 z-10 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-xl transition hover:border-relyon-sky hover:text-relyon-blue active:scale-95 lg:flex dark:border-slate-700 dark:bg-relyon-darkcard dark:text-slate-300">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+        </button>
+        <button id="next-slide-btn" aria-label="Produk berikutnya" class="absolute -right-5 top-1/2 z-10 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-xl transition hover:border-relyon-sky hover:text-relyon-blue active:scale-95 lg:flex dark:border-slate-700 dark:bg-relyon-darkcard dark:text-slate-300">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+        </button>
+      <div 
+        id="product-slider" 
+        class="flex gap-6 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-4 no-scrollbar"
+      >
+        {dummyProducts.map((product) => (
+          <div 
+            class="product-wrapper w-[85vw] sm:w-[320px] lg:w-[285px] flex-none snap-start transition-all duration-300"
+            data-category={product.category}
+          >
+            <ProductCard {...product} />
+          </div>
+        ))}
+      </div>
+      </div>
+
+      <div class="reveal delay-300 text-center mt-12">
+        <a 
+          href="/katalog" 
+          class="inline-flex items-center gap-3 bg-white dark:bg-relyon-darkcard border border-slate-200 dark:border-slate-800 hover:border-relyon-sky text-relyon-dark dark:text-white hover:text-relyon-blue dark:hover:text-relyon-sky px-8 py-3.5 rounded-2xl text-sm md:text-base font-semibold shadow-sm hover:shadow-md transition-all duration-300 group"
+        >
+          <span>Jelajahi Semua Produk & Aset</span>
+          <svg class="w-5 h-5 text-relyon-blue group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+          </svg>
+        </a>
+      </div>
+    </> : (
+      <div class="reveal rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center dark:border-slate-700 dark:bg-relyon-darkcard">
+        <span class="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-relyon-ice text-xl">{error ? '!' : '✦'}</span>
+        <h3 class="mt-4 font-bold">{error ? 'Katalog belum dapat dimuat' : 'Produk segera hadir'}</h3>
+        <p class="mx-auto mt-2 max-w-md text-sm text-slate-500 dark:text-slate-400">{error ? 'Silakan coba muat ulang halaman dalam beberapa saat.' : 'Kami sedang menyiapkan koleksi aset digital pilihan untuk kamu.'}</p>
+      </div>
+    )}
+  </section>
+
+  <Testimonials />
+  <FAQ />
+</MainLayout>
+
+<style>
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const slider = document.getElementById('product-slider');
+    const prevBtn = document.getElementById('prev-slide-btn');
+    const nextBtn = document.getElementById('next-slide-btn');
+    const productWrappers = document.querySelectorAll('.product-wrapper');
+
+    // Navigasi Slider
+    if (slider) {
+      prevBtn?.addEventListener('click', () => {
+        slider.scrollBy({ left: -320, behavior: 'smooth' });
+      });
+
+      nextBtn?.addEventListener('click', () => {
+        slider.scrollBy({ left: 320, behavior: 'smooth' });
+      });
+    }
+
+    // Listener Filter Kategori dari Komponent ProductFilter
+    window.addEventListener('filter-category-changed', (e: any) => {
+      const selectedCategory = e.detail?.category;
+
+      productWrappers.forEach((wrapper) => {
+        const itemCategory = wrapper.getAttribute('data-category');
+
+        if (selectedCategory === 'all' || itemCategory === selectedCategory) {
+          (wrapper as HTMLElement).style.display = 'block';
+        } else {
+          (wrapper as HTMLElement).style.display = 'none';
+        }
+      });
+
+      if (slider) {
+        slider.scrollTo({ left: 0, behavior: 'smooth' });
+      }
+    });
+  });
+</script>

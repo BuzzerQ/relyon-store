@@ -1,0 +1,56 @@
+---
+interface Props {
+  categories?: string[];
+}
+
+const { categories = ['Semua'] } = Astro.props;
+---
+
+<div class="flex items-center gap-2 overflow-x-auto pb-4 mb-6 no-scrollbar" id="category-filters">
+  {categories.map((cat, index) => {
+    const isAll = cat.toLowerCase() === 'semua' || cat.toLowerCase() === 'all';
+    const categoryValue = isAll ? 'all' : cat;
+    const label = isAll ? 'Semua Produk' : cat;
+
+    return (
+      <button 
+        data-category={categoryValue}
+        class={`filter-btn px-5 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-all shadow-sm cursor-pointer ${
+          index === 0 
+            ? 'active bg-relyon-blue text-white' 
+            : 'bg-white dark:bg-relyon-darkcard border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-relyon-sky'
+        }`}
+      >
+        {label}
+      </button>
+    );
+  })}
+</div>
+
+<script>
+  // Logika interaktivitas tombol filter di client-side
+  document.addEventListener('DOMContentLoaded', () => {
+    const filterBtns = document.querySelectorAll('.filter-btn');
+
+    filterBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        // Reset state aktif seluruh tombol
+        filterBtns.forEach((b) => {
+          b.classList.remove('active', 'bg-relyon-blue', 'text-white');
+          b.classList.add('bg-white', 'dark:bg-relyon-darkcard', 'border', 'border-slate-200', 'dark:border-slate-800', 'text-slate-600', 'dark:text-slate-300');
+        });
+
+        // Set tombol yang diklik menjadi aktif
+        btn.classList.add('active', 'bg-relyon-blue', 'text-white');
+        btn.classList.remove('bg-white', 'dark:bg-relyon-darkcard', 'border', 'border-slate-200', 'dark:border-slate-800', 'text-slate-600', 'dark:text-slate-300');
+
+        const selectedCategory = btn.getAttribute('data-category');
+
+        // Dispatch custom event agar grid produk melakukan filtering
+        window.dispatchEvent(new CustomEvent('filter-category-changed', {
+          detail: { category: selectedCategory }
+        }));
+      });
+    });
+  });
+</script>

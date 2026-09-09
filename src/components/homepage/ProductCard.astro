@@ -1,0 +1,90 @@
+---
+interface Props {
+  id: string;
+  title: string;
+  slug?: string;
+  category: string;
+  price: number;
+  originalPrice?: number;
+  thumbnail: string;
+}
+
+const { id, title, slug, category, price, originalPrice, thumbnail } = Astro.props;
+
+// Auto-generate slug jika data slug belum ada
+const productSlug = slug || title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+const detailUrl = `/katalog/${productSlug}`;
+---
+
+<div class="bg-white dark:bg-relyon-darkcard border border-slate-200 dark:border-slate-800 rounded-2xl p-4 hover:border-relyon-sky transition-all duration-300 flex flex-col justify-between h-full group">
+  <div>
+    <!-- Thumbnail Card sebagai Link -->
+    <a href={detailUrl} class="block overflow-hidden rounded-xl mb-3 relative">
+      <img 
+        src={thumbnail} 
+        alt={title} 
+        class="w-full h-44 object-cover group-hover:scale-105 transition-transform duration-300" 
+      />
+      <span class="absolute top-2 left-2 bg-relyon-dark/80 backdrop-blur-md text-white text-[10px] font-bold px-2.5 py-1 rounded-md uppercase">
+        {category}
+      </span>
+    </a>
+
+    <!-- Judul Produk sebagai Link -->
+    <a href={detailUrl} class="block">
+      <h3 class="font-bold text-sm text-relyon-dark dark:text-white line-clamp-2 hover:text-relyon-blue dark:hover:text-relyon-sky transition-colors">
+        {title}
+      </h3>
+    </a>
+  </div>
+
+  <!-- Harga & Tombol Cart -->
+  <div class="flex items-center justify-between mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
+    <div>
+      {originalPrice && (
+        <span class="text-[11px] text-slate-400 line-through block">
+          Rp {originalPrice.toLocaleString('id-ID')}
+        </span>
+      )}
+      <span class="text-sm font-extrabold text-relyon-blue dark:text-relyon-sky">
+        Rp {price.toLocaleString('id-ID')}
+      </span>
+    </div>
+
+    <button 
+      class="add-to-cart-btn p-2 rounded-xl bg-relyon-ice dark:bg-slate-800 text-relyon-blue dark:text-relyon-sky hover:bg-relyon-blue hover:text-white transition-all cursor-pointer"
+      data-id={id}
+      data-title={title}
+      data-price={price}
+      data-thumbnail={thumbnail}
+      data-category={category}
+      title="Tambah ke keranjang"
+      aria-label={`Tambah ${title} ke keranjang`}
+    >
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<script>
+  import { addToCart } from '../../lib/cartStore';
+
+  document.querySelectorAll('.add-to-cart-btn').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const target = e.currentTarget as HTMLElement;
+      
+      const product = {
+        id: target.getAttribute('data-id') || '',
+        title: target.getAttribute('data-title') || '',
+        price: Number(target.getAttribute('data-price') || 0),
+        thumbnail: target.getAttribute('data-thumbnail') || '',
+        category: target.getAttribute('data-category') || '',
+      };
+
+      addToCart(product);
+    });
+  });
+</script>

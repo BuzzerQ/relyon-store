@@ -1,0 +1,75 @@
+---
+import '../styles/global.css';
+import AnnounceBar from '../components/AnnounceBar.astro';
+import Header from '../components/Header.astro';
+import FloatingCart from '../components/FloatingCart.astro';
+import CartDrawer from '../components/CartDrawer.astro';
+import CheckoutModal from '../components/CheckoutModal.astro';
+import Footer from '../components/Footer.astro';
+import BackToTop from '../components/BackToTop.astro';
+
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+    <script is:inline>
+      const theme = (() => {
+        if (typeof localStorage !== 'undefined' && localStorage.getItem('theme')) {
+          return localStorage.getItem('theme');
+        }
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      })();
+      if (theme === 'dark') document.documentElement.classList.add('dark');
+      else document.documentElement.classList.remove('dark');
+    </script>
+  </head>
+  <body class="bg-slate-50 dark:bg-relyon-darkbg text-relyon-dark dark:text-slate-100 font-sans antialiased transition-colors duration-300">
+    <AnnounceBar />
+    <Header />
+    <main class="min-h-screen">
+      <slot />
+    </main>
+    <FloatingCart />
+    <BackToTop />
+    <CartDrawer />
+    <CheckoutModal />
+    <Footer />
+
+    <!-- Script Intersection Observer buat Animasi Scroll -->
+    <script is:inline>
+      const observerOptions = {
+        root: null,
+        rootMargin: '0px 0px -50px 0px',
+        threshold: 0.15
+      };
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('active');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, observerOptions);
+
+      document.addEventListener('DOMContentLoaded', () => {
+        const revealElements = document.querySelectorAll('.reveal');
+        revealElements.forEach((el) => observer.observe(el));
+      });
+    </script>
+  </body>
+</html>

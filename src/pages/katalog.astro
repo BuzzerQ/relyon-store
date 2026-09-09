@@ -1,0 +1,249 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+import ProductCard from '../components/homepage/ProductCard.astro';
+import { supabase } from '../lib/supabase';
+
+// Fetch seluruh produk aktif dari Supabase
+const { data: products, error } = await supabase
+  .from('products')
+  .select('id, title, slug, category, price, original_price, thumbnail, created_at')
+  .eq('is_active', true)
+  .order('created_at', { ascending: false });
+
+if (error) {
+  console.error('❌ Error fetching catalog products:', error.message);
+} else {
+  console.log('✅ Catalog Products fetched:', products?.length);
+}
+
+const rawProducts = products || [];
+
+// 💡 Format data produk agar props slug, price (number), dan originalPrice konsisten
+const allProducts = rawProducts.map((p) => ({
+  id: p.id,
+  title: p.title,
+  slug: p.slug, // 👈 Memastikan link /katalog/[slug] bekerja
+  category: p.category,
+  price: Number(p.price),
+  originalPrice: p.original_price ? Number(p.original_price) : undefined,
+  thumbnail: p.thumbnail,
+  createdAt: p.created_at,
+}));
+
+// 💡 Ambil daftar kategori unik dari database secara DINAMIS
+const categories = ['Semua', ...new Set(allProducts.map(p => p.category).filter(Boolean))];
+---
+
+<MainLayout title="Semua Produk & Aset Digital - Relyon Creative">
+  <!-- Header Page Banner -->
+  <section class="relative overflow-hidden bg-gradient-to-b from-relyon-ice/70 via-relyon-ice/20 to-transparent py-10 md:py-14 dark:from-relyon-darkcard/50 dark:via-relyon-darkbg/20">
+    <div class="pointer-events-none absolute -left-24 top-0 h-56 w-56 rounded-full bg-relyon-sky/20 blur-3xl"></div>
+    <div class="pointer-events-none absolute -right-20 bottom-0 h-64 w-64 rounded-full bg-relyon-blue/10 blur-3xl"></div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <h1 class="reveal text-3xl md:text-5xl font-bold text-relyon-dark dark:text-white tracking-tight">
+        Katalog Produk
+      </h1>
+      <p class="reveal delay-100 mt-3 text-base text-slate-600 dark:text-slate-300 max-w-xl mx-auto">
+        Temukan seluruh koleksi prompt AI, preset Lightroom, dan template web premium Relyon Creative.
+      </p>
+    </div>
+  </section>
+
+  <!-- Filter & Catalog Full Grid -->
+  <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mb-16">
+    
+    <!-- Controls: Search Input & Dynamic Category Pills -->
+    <div class="reveal rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-relyon-darkcard mb-6">
+      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+      
+      <!-- Search Bar -->
+      <div class="relative w-full lg:w-80 flex items-center">
+        <input 
+          type="text" 
+          id="search-input"
+          placeholder="Cari aset digital..." 
+          class="w-full bg-white dark:bg-relyon-darkcard border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 pl-10 text-sm text-relyon-dark dark:text-white placeholder-slate-400 focus:outline-none focus:border-relyon-blue transition-colors"
+        />
+        <svg class="w-4 h-4 text-slate-400 absolute left-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+      </div>
+
+      <!-- Categories Pills (DINAMIS DARI SUPABASE) -->
+      <div class="flex items-center gap-2 overflow-x-auto w-full lg:w-auto pb-1 no-scrollbar" id="category-filters">
+        {categories.map((cat, index) => {
+          const isAll = cat.toLowerCase() === 'semua' || cat.toLowerCase() === 'all';
+          const catValue = isAll ? 'all' : cat;
+
+          return (
+            <button 
+              data-category={catValue} 
+              class={`filter-btn px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                index === 0 
+                  ? 'active bg-relyon-blue text-white shadow-sm' 
+                  : 'bg-white dark:bg-relyon-darkcard border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-relyon-sky'
+              }`}
+            >
+              {cat}
+            </button>
+          );
+        })}
+      </div>
+      </div>
+    </div>
+
+    <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <p id="catalog-result-count" class="text-sm font-medium text-slate-500 dark:text-slate-400">{allProducts.length} produk tersedia</p>
+      <label class="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+        Urutkan
+        <select id="catalog-sort" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-relyon-dark outline-none focus:border-relyon-blue dark:border-slate-700 dark:bg-relyon-darkcard dark:text-white">
+          <option value="newest">Terbaru</option>
+          <option value="price-low">Harga terendah</option>
+          <option value="price-high">Harga tertinggi</option>
+          <option value="title">Nama A–Z</option>
+        </select>
+      </label>
+    </div>
+
+    <!-- Empty State jika data dari Supabase kosong -->
+    {allProducts.length === 0 && (
+      <div class="text-center py-16 bg-white dark:bg-relyon-darkcard rounded-2xl border border-slate-200 dark:border-slate-800">
+        <div class="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-relyon-ice text-relyon-blue">{error ? '!' : '✦'}</div>
+        <p class="text-slate-600 dark:text-slate-300 font-semibold">{error ? 'Katalog belum dapat dimuat' : 'Belum ada produk aktif'}</p>
+        <p class="mt-2 text-sm text-slate-400">{error ? 'Silakan muat ulang halaman dalam beberapa saat.' : 'Koleksi produk sedang kami siapkan.'}</p>
+      </div>
+    )}
+
+    <!-- Product Grid 4 Kolom Full -->
+    <div id="catalog-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      {allProducts.map((product) => (
+        <div 
+          class="catalog-item" 
+          data-category={product.category}
+          data-title={product.title.toLowerCase()}
+          data-price={product.price}
+          data-created-at={product.createdAt}
+        >
+          <ProductCard {...product} />
+        </div>
+      ))}
+    </div>
+
+    <!-- Empty Filter Result State -->
+    <div id="empty-filter-state" class="hidden text-center py-16 bg-white dark:bg-relyon-darkcard rounded-2xl border border-slate-200 dark:border-slate-800">
+      <p class="text-slate-500 dark:text-slate-400 font-medium">Tidak ada produk yang cocok dengan pencarian atau filter pilihan kamu.</p>
+    </div>
+
+    <div class="mt-10 text-center">
+      <button id="load-more-btn" type="button" class="hidden rounded-xl border border-slate-200 bg-white px-7 py-3 text-sm font-semibold text-relyon-dark shadow-sm transition hover:border-relyon-sky hover:text-relyon-blue dark:border-slate-700 dark:bg-relyon-darkcard dark:text-white">
+        Muat Lebih Banyak
+      </button>
+    </div>
+
+  </section>
+</MainLayout>
+
+<!-- Utility CSS Sembunyikan Scrollbar -->
+<style>
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+</style>
+
+<script is:inline>
+  document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('search-input');
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    const catalogGrid = document.getElementById('catalog-grid');
+    const catalogItems = Array.from(document.querySelectorAll('.catalog-item'));
+    const emptyState = document.getElementById('empty-filter-state');
+    const resultCount = document.getElementById('catalog-result-count');
+    const sortSelect = document.getElementById('catalog-sort');
+    const loadMoreButton = document.getElementById('load-more-btn');
+
+    let currentCategory = 'all';
+    let currentSearch = '';
+    let visibleLimit = 8;
+
+    function sortProducts() {
+      const sort = sortSelect?.value || 'newest';
+      catalogItems.sort((a, b) => {
+        const priceA = Number(a.getAttribute('data-price') || 0);
+        const priceB = Number(b.getAttribute('data-price') || 0);
+        const titleA = a.getAttribute('data-title') || '';
+        const titleB = b.getAttribute('data-title') || '';
+        const dateA = new Date(a.getAttribute('data-created-at') || 0).getTime();
+        const dateB = new Date(b.getAttribute('data-created-at') || 0).getTime();
+        if (sort === 'price-low') return priceA - priceB;
+        if (sort === 'price-high') return priceB - priceA;
+        if (sort === 'title') return titleA.localeCompare(titleB, 'id');
+        return dateB - dateA;
+      });
+      catalogItems.forEach((item) => catalogGrid?.appendChild(item));
+    }
+
+    function filterProducts() {
+      sortProducts();
+      const matches = catalogItems.filter((item) => {
+        const itemCategory = item.getAttribute('data-category');
+        const itemTitle = item.getAttribute('data-title') || '';
+        const matchCategory = (currentCategory === 'all' || itemCategory === currentCategory);
+        const matchSearch = itemTitle.includes(currentSearch.toLowerCase());
+        return matchCategory && matchSearch;
+      });
+
+      catalogItems.forEach((item) => { item.style.display = 'none'; });
+      matches.slice(0, visibleLimit).forEach((item) => { item.style.display = 'block'; });
+
+      if (resultCount) resultCount.textContent = `${matches.length} produk ditemukan`;
+      loadMoreButton?.classList.toggle('hidden', matches.length <= visibleLimit);
+
+      if (emptyState) {
+        if (matches.length === 0 && catalogItems.length > 0) {
+          emptyState.classList.remove('hidden');
+        } else {
+          emptyState.classList.add('hidden');
+        }
+      }
+    }
+
+    filterBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        currentCategory = btn.getAttribute('data-category') || 'all';
+        visibleLimit = 8;
+
+        filterBtns.forEach((b) => {
+          b.classList.remove('bg-relyon-blue', 'text-white', 'shadow-sm', 'active');
+          b.classList.add('bg-white', 'dark:bg-relyon-darkcard', 'border', 'border-slate-200', 'dark:border-slate-800', 'text-slate-600', 'dark:text-slate-300');
+        });
+
+        btn.classList.add('bg-relyon-blue', 'text-white', 'shadow-sm', 'active');
+        btn.classList.remove('bg-white', 'dark:bg-relyon-darkcard', 'border', 'border-slate-200', 'dark:border-slate-800', 'text-slate-600', 'dark:text-slate-300');
+
+        filterProducts();
+      });
+    });
+
+    searchInput?.addEventListener('input', (e) => {
+      currentSearch = e.target.value.trim();
+      visibleLimit = 8;
+      filterProducts();
+    });
+
+    sortSelect?.addEventListener('change', () => {
+      visibleLimit = 8;
+      filterProducts();
+    });
+
+    loadMoreButton?.addEventListener('click', () => {
+      visibleLimit += 8;
+      filterProducts();
+    });
+
+    filterProducts();
+  });
+</script>

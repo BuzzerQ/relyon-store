@@ -1,0 +1,141 @@
+---
+---
+
+<section class="pt-10 transition-colors">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+    
+    <!-- Text Highlight Jasa / Plugin -->
+    <div class="reveal max-w-3xl mx-auto mb-8">
+      <p class="text-sm md:text-base text-slate-600 dark:text-slate-300 leading-relaxed">
+  <strong class="text-relyon-dark dark:text-white font-semibold">
+    RELYON CREATIVE
+  </strong>{' '}
+  menghadirkan aset digital siap pakai untuk kreator, freelancer, dan bisnis.
+  Pilih{' '}
+  <span class="font-semibold text-relyon-blue dark:text-relyon-sky">
+    prompt AI, preset foto, template website, dan UI kit
+  </span>{' '}
+  yang membantu pekerjaan selesai lebih cepat dan tetap profesional.
+</p>
+    </div>
+
+    <!-- Logo Cloud / Supported Brand Icons -->
+    <div class="reveal delay-100 flex flex-wrap items-center justify-center gap-8 md:gap-12 opacity-70 grayscale hover:grayscale-0 transition-all duration-300 pb-12">
+      <span class="font-bold text-slate-500 hover:text-relyon-blue dark:hover:text-white transition-colors text-lg flex items-center gap-2">
+        <span class="text-xl">🤖</span> Prompt AI
+      </span>
+      <span class="font-bold text-slate-500 hover:text-relyon-blue dark:hover:text-white transition-colors text-lg flex items-center gap-2">
+        <span class="text-xl">📸</span> Preset Foto
+      </span>
+      <span class="font-bold text-slate-500 hover:text-relyon-blue dark:hover:text-white transition-colors text-lg flex items-center gap-2">
+        <span class="text-xl">🖥️</span> Template Web
+      </span>
+      <span class="font-bold text-slate-500 hover:text-relyon-blue dark:hover:text-white transition-colors text-lg flex items-center gap-2">
+        <span class="text-xl">🧩</span> UI Kit
+      </span>
+      <span class="font-bold text-slate-500 hover:text-relyon-blue dark:hover:text-white transition-colors text-lg flex items-center gap-2">
+        <span class="text-xl">⚡</span> Siap Pakai
+      </span>
+    </div>
+
+  </div>
+
+  <!-- Stats Grid Background Full Putih -->
+  <div class="w-full bg-white dark:bg-relyon-darkcard border-y border-slate-200/80 dark:border-slate-800 py-10 transition-colors" id="stats-container">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <div class="reveal delay-200 grid grid-cols-2 md:grid-cols-4 gap-8 divide-y md:divide-y-0 md:divide-x divide-slate-100 dark:divide-slate-800">
+        
+        <div class="pt-4 md:pt-0">
+          <p class="text-3xl md:text-4xl font-extrabold text-relyon-blue dark:text-relyon-sky mb-1">
+            <span class="counter" data-target="1200" data-format="number">0</span>+
+          </p>
+          <p class="text-xs md:text-sm text-slate-500 dark:text-slate-400 font-medium">
+            Website & Proyek Ditangani
+          </p>
+        </div>
+
+        <div class="pt-4 md:pt-0">
+          <p class="text-3xl md:text-4xl font-extrabold text-relyon-blue dark:text-relyon-sky mb-1">
+            <span class="counter" data-target="5000" data-format="number">0</span>+
+          </p>
+          <p class="text-xs md:text-sm text-slate-500 dark:text-slate-400 font-medium">
+            Aset & Lisensi Terpasang
+          </p>
+        </div>
+
+        <div class="pt-4 md:pt-0">
+          <p class="text-3xl md:text-4xl font-extrabold text-relyon-blue dark:text-relyon-sky mb-1">
+            <span class="counter" data-target="100" data-format="percent">0</span>%
+          </p>
+          <p class="text-xs md:text-sm text-slate-500 dark:text-slate-400 font-medium">
+            Lisensi & File Original
+          </p>
+        </div>
+
+        <div class="pt-4 md:pt-0">
+          <p class="text-3xl md:text-4xl font-extrabold text-relyon-blue dark:text-relyon-sky mb-1">
+            1×24 jam
+          </p>
+          <p class="text-xs md:text-sm text-slate-500 dark:text-slate-400 font-medium">
+            Rata-rata Pengerjaan
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Script Animated Counter -->
+<script>
+  function animateCounters() {
+    const counters = document.querySelectorAll<HTMLElement>('.counter');
+    const duration = 1800; // Durasi animasi (ms)
+
+    counters.forEach((counter) => {
+      const target = parseInt(counter.getAttribute('data-target') || '0', 10);
+      const isNumberFormat = counter.getAttribute('data-format') === 'number';
+      const startTime = performance.now();
+
+      function updateNumber(currentTime: number) {
+        const elapsedTime = currentTime - startTime;
+        const progress = Math.min(elapsedTime / duration, 1);
+        
+        // Easing function (easeOutQuad) biar gerakan angka makin halus pas mau nyampe target
+        const easeProgress = 1 - (1 - progress) * (1 - progress);
+        const currentCount = Math.floor(easeProgress * target);
+
+        counter.innerText = isNumberFormat 
+          ? currentCount.toLocaleString('id-ID') 
+          : currentCount.toString();
+
+        if (progress < 1) {
+          requestAnimationFrame(updateNumber);
+        } else {
+          counter.innerText = isNumberFormat 
+            ? target.toLocaleString('id-ID') 
+            : target.toString();
+        }
+      }
+
+      requestAnimationFrame(updateNumber);
+    });
+  }
+
+  // Pakai IntersectionObserver biar countdown cuma jalan pas section-nya udah keliatan di layar
+  const statsContainer = document.getElementById('stats-container');
+  if (statsContainer) {
+    let hasAnimated = false;
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting && !hasAnimated) {
+          hasAnimated = true;
+          animateCounters();
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.3 });
+
+    observer.observe(statsContainer);
+  }
+</script> 
